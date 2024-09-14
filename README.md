@@ -1,6 +1,10 @@
 # ELT Pipeline with Snowflake, DBT, and Airflow
 
+![alt text](./etl_pipeline.jpeg)
+
 This project demonstrates the process of building an **ELT pipeline** from scratch using **DBT**, **Snowflake**, and **Airflow**. The pipeline extracts data from Snowflake's TPCH dataset, performs transformations using DBT, and orchestrates the workflow using Airflow. The primary focus is on **data modeling**, **fact table creation**, and **business logic transformations**.
+
+
 
 ## Overview
 
