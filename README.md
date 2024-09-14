@@ -1,48 +1,95 @@
-Overview
-========
+# ELT Pipeline with Snowflake, DBT, and Airflow
 
-Welcome to Astronomer! This project was generated after you ran 'astro dev init' using the Astronomer CLI. This readme describes the contents of the project, as well as how to run Apache Airflow on your local machine.
+This project demonstrates the process of building an **ELT pipeline** from scratch using **DBT**, **Snowflake**, and **Airflow**. The pipeline extracts data from Snowflake's TPCH dataset, performs transformations using DBT, and orchestrates the workflow using Airflow. The primary focus is on **data modeling**, **fact table creation**, and **business logic transformations**.
 
-Project Contents
-================
+## Overview
 
-Your Astro project contains the following files and folders:
+### ELT vs. ETL
+Traditional ETL (Extract, Transform, Load) transforms data before loading it into a data warehouse. ELT, in contrast, loads raw data first, then applies transformations. Modern tools and cloud storage (like Snowflake) make ELT more efficient by leveraging cheaper storage.
 
-- dags: This folder contains the Python files for your Airflow DAGs. By default, this directory includes one example DAG:
-    - `example_astronauts`: This DAG shows a simple ETL pipeline example that queries the list of astronauts currently in space from the Open Notify API and prints a statement for each astronaut. The DAG uses the TaskFlow API to define tasks in Python, and dynamic task mapping to dynamically print a statement for each astronaut. For more on how this DAG works, see our [Getting started tutorial](https://www.astronomer.io/docs/learn/get-started-with-airflow).
-- Dockerfile: This file contains a versioned Astro Runtime Docker image that provides a differentiated Airflow experience. If you want to execute other commands or overrides at runtime, specify them here.
-- include: This folder contains any additional files that you want to include as part of your project. It is empty by default.
-- packages.txt: Install OS-level packages needed for your project by adding them to this file. It is empty by default.
-- requirements.txt: Install Python packages needed for your project by adding them to this file. It is empty by default.
-- plugins: Add custom or community plugins for your project to this file. It is empty by default.
-- airflow_settings.yaml: Use this local-only file to specify Airflow Connections, Variables, and Pools instead of entering them in the Airflow UI as you develop DAGs in this project.
+### Tools Used:
+- **DBT**: Data transformation
+- **Snowflake**: Data warehouse
+- **Airflow**: Workflow orchestration
 
-Deploy Your Project Locally
-===========================
+## Project Steps
 
-1. Start Airflow on your local machine by running 'astro dev start'.
+### 1. Environment Setup
+- Set up a **Snowflake account**.
+- Create a **warehouse**, **database**, and **role** in Snowflake using the following SQL commands:
+    ```sql
+    CREATE WAREHOUSE IF NOT EXISTS DBT_WAREHOUSE;
+    CREATE DATABASE IF NOT EXISTS DBT_DATABASE;
+    CREATE ROLE IF NOT EXISTS DBT_ROLE;
+    ```
+- Grant privileges to the user and roles.
 
-This command will spin up 4 Docker containers on your machine, each for a different Airflow component:
+### 2. DBT Setup
+- Install DBT Core:
+    ```bash
+    pip install dbt-core
+    ```
+- Initialize the DBT project:
+    ```bash
+    dbt init data_pipeline
+    ```
+- Configure the Snowflake profile within DBT.
 
-- Postgres: Airflow's Metadata Database
-- Webserver: The Airflow component responsible for rendering the Airflow UI
-- Scheduler: The Airflow component responsible for monitoring and triggering tasks
-- Triggerer: The Airflow component responsible for triggering deferred tasks
+### 3. Data Modeling
+- **Staging Tables**: Pull data from Snowflake TPCH dataset and create views for `orders` and `lineitems` tables.
+- **Fact Tables**: Create fact tables using business logic and transformations:
+    - Example: Creating a surrogate key for dimensional modeling.
+    - Aggregating data into a fact table.
 
-2. Verify that all 4 Docker containers were created by running 'docker ps'.
+### 4. Macros
+- Defined reusable macros in DBT for business logic, such as calculating the discounted amount from extended prices.
 
-Note: Running 'astro dev start' will start your project with the Airflow Webserver exposed at port 8080 and Postgres exposed at port 5432. If you already have either of those ports allocated, you can either [stop your existing Docker containers or change the port](https://www.astronomer.io/docs/astro/cli/troubleshoot-locally#ports-are-not-available-for-my-local-airflow-webserver).
+### 5. Testing
+- Added **DBT tests** (both generic and singular) to ensure data integrity:
+    - Unique, non-null checks on primary keys.
+    - Valid range checks on dates and values.
 
-3. Access the Airflow UI for your local Airflow project. To do so, go to http://localhost:8080/ and log in with 'admin' for both your Username and Password.
+### 6. Orchestration with Airflow
+- Installed **Airflow** and **Astronomer Cosmos** to orchestrate the DBT transformations.
+- Set up Airflow DAGs to trigger DBT runs:
+    - Scheduled DAGs to run daily.
+    - Configured the Snowflake connection within Airflow.
 
-You should also be able to access your Postgres Database at 'localhost:5432/postgres'.
+## Project Structure
 
-Deploy Your Project to Astronomer
-=================================
+data_pipeline/ ├── models/ │ ├── staging/ │ └── marts/ ├── macros/ ├── tests/ ├── dags/ │ └── dbt_pipeline_dag.py └── Dockerfile
 
-If you have an Astronomer account, pushing code to a Deployment on Astronomer is simple. For deploying instructions, refer to Astronomer documentation: https://www.astronomer.io/docs/astro/deploy-code/
 
-Contact
-=======
+- `models/`: Contains all the DBT models, including staging and fact tables.
+- `macros/`: Contains reusable business logic for transformations.
+- `tests/`: Includes DBT tests for data validation.
+- `dags/`: Contains the Airflow DAG for orchestrating the DBT runs.
 
-The Astronomer CLI is maintained with love by the Astronomer team. To report a bug or suggest a change, reach out to our support.
+## How to Run
+
+1. **DBT Models**:
+    ```bash
+    dbt run
+    ```
+2. **Airflow DAG**:
+    - Start Airflow:
+        ```bash
+        airflow webserver
+        airflow scheduler
+        ```
+    - Trigger the `dbt_pipeline_dag` from the Airflow UI.
+
+## Future Improvements
+- Add more comprehensive data tests.
+- Integrate additional sources or incremental data loading.
+- Deploy to cloud services (AWS, GCP) for scalability.
+
+## Conclusion
+
+This project demonstrates how to create an ELT pipeline using modern tools like DBT, Snowflake, and Airflow. It covers the complete workflow from environment setup to orchestration with Airflow. The result is a scalable and reusable ELT pipeline, ready for deployment in a production environment.
+
+## Referances
+This project was build with a hand-on tutorial, with adaptation for Widnows and another changes needed, original [video](https://www.youtube.com/watch?v=OLXkGB7krGo&t=729s) 
+## License
+This project is open-source and available under the [MIT License](https://opensource.org/license/MIT).
+
